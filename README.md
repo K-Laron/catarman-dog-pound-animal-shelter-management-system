@@ -3,18 +3,18 @@
 ## Current Runtime Snapshot
 
 - Custom PHP 8.2 MVC application with a session-backed web UI and JSON API.
-- [public/index.php](/C:/Users/TESS%20LARON/Desktop/REVISED/public/index.php) boots Dotenv, [config/app.php](/C:/Users/TESS%20LARON/Desktop/REVISED/config/app.php), maintenance checks, [routes/web.php](/C:/Users/TESS%20LARON/Desktop/REVISED/routes/web.php), and the modular API loader in [routes/api.php](/C:/Users/TESS%20LARON/Desktop/REVISED/routes/api.php).
+- [public/index.php](public/index.php) boots Dotenv, [config/app.php](config/app.php), maintenance checks, [routes/web.php](routes/web.php), and the modular API loader in [routes/api.php](routes/api.php).
 - Current route surface:
   - `34` web routes
   - `126` production API routes across `15` route-module files
   - `1` extra debug-only API route: `POST /api/validate-test`
 - Current schema baseline:
-  - `39` tables in [database_schema.sql](/C:/Users/TESS%20LARON/Desktop/REVISED/database_schema.sql)
-  - `6` tracked SQL migrations in [database/migrations](/C:/Users/TESS%20LARON/Desktop/REVISED/database/migrations)
+  - `39` tables in [database/database_schema.sql](database/database_schema.sql)
+  - `6` tracked SQL migrations in [database/migrations](database/migrations)
 
 ## Civic Ledger UI System
 
-- Authenticated pages use the Civic Ledger shell from [views/layouts/app.php](/C:/Users/TESS%20LARON/Desktop/REVISED/views/layouts/app.php).
+- Authenticated pages use the Civic Ledger shell from [views/layouts/app.php](views/layouts/app.php).
 - Typography:
   - `Lexend` for headings
   - `Source Sans 3` for primary UI copy
@@ -24,7 +24,7 @@
   - persistent sidebar scroll state during soft navigation
   - breadcrumb links with draft recovery for accidental navigation
   - unread-only notification dropdown behavior
-- The dashboard is a bundled operations surface driven by `GET /api/dashboard/bootstrap` and rendered with the self-hosted Chart.js asset at [public/assets/vendor/chart.js/chart.umd.js](/C:/Users/TESS%20LARON/Desktop/REVISED/public/assets/vendor/chart.js/chart.umd.js).
+- The dashboard is a bundled operations surface driven by `GET /api/dashboard/bootstrap` and rendered with the self-hosted Chart.js asset at [public/assets/vendor/chart.js/chart.umd.js](public/assets/vendor/chart.js/chart.umd.js).
 
 ## Stack
 
@@ -32,8 +32,8 @@
 
 - PHP `>=8.2`
 - MySQL-compatible relational database
-- Custom router, middleware pipeline, and response helpers under [src/Core](/C:/Users/TESS%20LARON/Desktop/REVISED/src/Core)
-- Server-rendered PHP views under [views](/C:/Users/TESS%20LARON/Desktop/REVISED/views)
+- Custom router, middleware pipeline, and response helpers under [src/Core](src/Core)
+- Server-rendered PHP views under [views](views)
 
 ### Composer Packages
 
@@ -63,19 +63,13 @@ npm run tooling:check
 
 ## Performance Diagnostics
 
-- Request and query timing is instrumented through [src/Support/Performance/PerformanceProbe.php](/C:/Users/TESS%20LARON/Desktop/REVISED/src/Support/Performance/PerformanceProbe.php).
+- Request and query timing is instrumented through [src/Support/Performance/PerformanceProbe.php](src/Support/Performance/PerformanceProbe.php).
 - When `APP_PERFORMANCE_DEBUG=true` or `APP_DEBUG=true`, responses can emit:
   - `X-App-Request-Time-Ms`
   - `X-App-Query-Count`
   - `X-App-Database-Time-Ms`
-- Local performance report script:
-
-```bash
-php scripts/performance/report.php "Manual Check"
-```
-
-- Dashboard first paint is aggregated and cached by [src/Services/DashboardService.php](/C:/Users/TESS%20LARON/Desktop/REVISED/src/Services/DashboardService.php) through [src/Support/Cache/FileCacheStore.php](/C:/Users/TESS%20LARON/Desktop/REVISED/src/Support/Cache/FileCacheStore.php).
-- Pagination-heavy list endpoints use [src/Support/Pagination/PaginatedWindow.php](/C:/Users/TESS%20LARON/Desktop/REVISED/src/Support/Pagination/PaginatedWindow.php) to avoid unnecessary count work when possible.
+- Dashboard first paint is aggregated and cached by [src/Services/DashboardService.php](src/Services/DashboardService.php) through [src/Support/Cache/FileCacheStore.php](src/Support/Cache/FileCacheStore.php).
+- Pagination-heavy list endpoints use [src/Support/Pagination/PaginatedWindow.php](src/Support/Pagination/PaginatedWindow.php) to avoid unnecessary count work when possible.
 
 ## Functional Areas
 
@@ -105,24 +99,24 @@ composer install
 npm install
 ```
 
-3. Create `.env` from [.env.example](/C:/Users/TESS%20LARON/Desktop/REVISED/.env.example) and configure MySQL, app URL, mail, and session settings.
+3. Create `.env` from [.env.example](.env.example) and configure MySQL, app URL, mail, and session settings.
 
 4. Load the base schema and seed data.
 
 ```bash
-mysql -u root -p < database_schema.sql
-mysql -u root -p < seeders.sql
+mysql -u root -p < database/database_schema.sql
+mysql -u root -p < database/seeders.sql
 ```
 
-5. Apply tracked SQL migrations in [database/migrations](/C:/Users/TESS%20LARON/Desktop/REVISED/database/migrations).
+5. Apply tracked SQL migrations in [database/migrations](database/migrations).
 
 6. Start the local PHP server.
 
 ```powershell
-.\start-app.vbs
+powershell -ExecutionPolicy Bypass -File scripts/start-app.ps1
 ```
 
-The launcher wraps [scripts/start-app.ps1](/C:/Users/TESS%20LARON/Desktop/REVISED/scripts/start-app.ps1), starts `php -S 127.0.0.1:8000 -t public`, and opens `http://127.0.0.1:8000/adopt`.
+The launcher in [scripts/start-app.ps1](scripts/start-app.ps1) starts `php -S 127.0.0.1:8000 -t public`, stores runtime state under `storage/runtime`, and opens `http://127.0.0.1:8000/adopt`.
 
 ### Generate Additional Local Animal Data
 
@@ -146,10 +140,10 @@ php scripts/seed_activity.php 250
 
 ## Quick Start Scripts
 
-- [start-app.vbs](/C:/Users/TESS%20LARON/Desktop/REVISED/start-app.vbs)
-- [stop-app.vbs](/C:/Users/TESS%20LARON/Desktop/REVISED/stop-app.vbs)
-- [scripts/start-app.ps1](/C:/Users/TESS%20LARON/Desktop/REVISED/scripts/start-app.ps1)
-- [scripts/stop-app.ps1](/C:/Users/TESS%20LARON/Desktop/REVISED/scripts/stop-app.ps1)
+- [scripts/start-app.ps1](scripts/start-app.ps1)
+- [scripts/stop-app.ps1](scripts/stop-app.ps1)
+- [scripts/seed_animals.php](scripts/seed_animals.php)
+- [scripts/seed_activity.php](scripts/seed_activity.php)
 
 ## Verification
 
@@ -175,7 +169,7 @@ This command runs route coverage, critical HTTP smoke tests, the full PHPUnit su
 ## Security Model
 
 - Server-side session auth for both the browser UI and the JSON API
-- `HttpOnly` and `SameSite=Strict` session cookies via [src/Core/Session.php](/C:/Users/TESS%20LARON/Desktop/REVISED/src/Core/Session.php)
+- `HttpOnly` and `SameSite=Strict` session cookies via [src/Core/Session.php](src/Core/Session.php)
 - CSRF protection on state-changing browser/API requests
 - Route-level permission and role gates
 - Rate limiting with database-backed tracking and file-store fallback
@@ -191,20 +185,3 @@ This command runs route coverage, critical HTTP smoke tests, the full PHPUnit su
 - Rotate the seeded admin password
 - Verify writable `storage/` directories
 - Apply all SQL migrations
-
-## Docs Map
-
-- [ARCHITECTURE.md](/C:/Users/TESS%20LARON/Desktop/REVISED/ARCHITECTURE.md)
-- [API_ROUTES.md](/C:/Users/TESS%20LARON/Desktop/REVISED/API_ROUTES.md)
-- [IMPLEMENTATION_GUIDE.md](/C:/Users/TESS%20LARON/Desktop/REVISED/IMPLEMENTATION_GUIDE.md)
-- [VALIDATION_RULES.md](/C:/Users/TESS%20LARON/Desktop/REVISED/VALIDATION_RULES.md)
-- [PAGE_LAYOUTS.md](/C:/Users/TESS%20LARON/Desktop/REVISED/PAGE_LAYOUTS.md)
-- [PRD_Catarman_Dog_Pound.md](/C:/Users/TESS%20LARON/Desktop/REVISED/PRD_Catarman_Dog_Pound.md)
-- [system_summary.md](/C:/Users/TESS%20LARON/Desktop/REVISED/system_summary.md)
-- [llm_context.md](/C:/Users/TESS%20LARON/Desktop/REVISED/llm_context.md)
-- [ROOT_LAYOUT.md](/C:/Users/TESS%20LARON/Desktop/REVISED/ROOT_LAYOUT.md)
-
-## Notes on Historical Files
-
-- The root Markdown files are the living system docs.
-- Dated files under [docs](/C:/Users/TESS%20LARON/Desktop/REVISED/docs) are historical specs, plans, and measurement snapshots unless they explicitly say otherwise.
