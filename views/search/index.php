@@ -1,0 +1,190 @@
+<?php
+    $selectedModules = array_values(array_filter((array) ($searchFilters['modules'] ?? [])));
+    $selectedPerSection = (int) ($searchFilters['per_section'] ?? 5);
+    $availableModulesCount = count((array) ($availableSearchModules ?? []));
+    $availableModuleKeys = array_map(static fn (array $module): string => (string) ($module['key'] ?? ''), (array) ($availableSearchModules ?? []));
+    $defaultSearchPresets = array_values(array_filter([
+        in_array('animals', $availableModuleKeys, true) ? [
+            'id' => 'animals-under-care',
+            'label' => 'Animals Under Care',
+            'query' => 'care',
+            'filters' => [
+                'modules' => ['animals'],
+                'per_section' => 5,
+                'animals_status' => 'Under Medical Care',
+            ],
+        ] : null,
+        in_array('inventory', $availableModuleKeys, true) ? [
+            'id' => 'inventory-low-stock',
+            'label' => 'Low Stock Inventory',
+            'query' => 'stock',
+            'filters' => [
+                'modules' => ['inventory'],
+                'per_section' => 5,
+                'inventory_status' => 'low_stock',
+            ],
+        ] : null,
+        in_array('billing', $availableModuleKeys, true) ? [
+            'id' => 'billing-overdue',
+            'label' => 'Overdue Billing',
+            'query' => 'invoice',
+            'filters' => [
+                'modules' => ['billing'],
+                'per_section' => 5,
+                'billing_status' => 'overdue',
+            ],
+        ] : null,
+        in_array('adoptions', $availableModuleKeys, true) ? [
+            'id' => 'adoptions-pending',
+            'label' => 'Pending Adoptions',
+            'query' => 'review',
+            'filters' => [
+                'modules' => ['adoptions'],
+                'per_section' => 5,
+                'adoption_status' => 'pending_review',
+            ],
+        ] : null,
+    ]));
+?>
+
+<section class="search-command-shell page-title" id="search-page">
+    <div class="page-title-meta">
+        <span class="badge badge-info">Cross-module lookup</span>
+        <h1>Global Search</h1>
+        <div class="breadcrumb">Home &gt; Search</div>
+        <p class="text-muted">Search across animals, adopters, adoptions, billing, inventory, medical, and staff records you can access.</p>
+    </div>
+    <div class="search-command-meta">
+        <div class="search-command-stat">
+            <span class="field-label">Indexed modules</span>
+            <strong class="mono"><?= htmlspecialchars((string) $availableModulesCount, ENT_QUOTES, 'UTF-8') ?></strong>
+        </div>
+        <div class="search-command-stat">
+            <span class="field-label">Response mode</span>
+            <strong>Ledger view</strong>
+        </div>
+    </div>
+</section>
+
+<section class="card search-filter-dock">
+    <form class="search-form" id="search-form">
+        <div class="search-query-band">
+            <label class="field search-filter-span-2">
+                <span class="field-label">Find Records</span>
+                <div class="search-input-row">
+                    <input class="input search-command-input" type="search" name="q" value="<?= htmlspecialchars((string) ($searchQuery ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Try an animal ID, adopter name, invoice number, or SKU" minlength="2" required>
+                    <button class="btn-primary" type="submit">Search</button>
+                </div>
+            </label>
+            <div class="badge badge-info" id="search-total-badge">Ready</div>
+        </div>
+
+        <section class="search-presets">
+            <div class="search-presets-header">
+                <div>
+                    <span class="field-label">Saved filters</span>
+                    <h4>Search Presets</h4>
+                </div>
+                <button class="btn-secondary" type="button" data-search-save-preset>Save current view</button>
+            </div>
+            <div class="search-preset-list" data-search-preset-list aria-live="polite"></div>
+        </section>
+
+        <div class="search-filter-layout">
+            <label class="field">
+                <span class="field-label">Results Per Module</span>
+                <select class="input" name="per_section">
+                    <?php foreach ([3, 5, 10] as $size): ?>
+                        <option value="<?= $size ?>" <?= $selectedPerSection === $size ? 'selected' : '' ?>><?= $size ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <label class="field">
+                <span class="field-label">Date From</span>
+                <input class="input" type="date" name="date_from" value="<?= htmlspecialchars((string) ($searchFilters['date_from'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+            </label>
+            <label class="field">
+                <span class="field-label">Date To</span>
+                <input class="input" type="date" name="date_to" value="<?= htmlspecialchars((string) ($searchFilters['date_to'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+            </label>
+        </div>
+
+        <fieldset class="search-module-filters">
+            <legend class="field-label">Modules</legend>
+            <div class="search-module-list">
+                <?php foreach (($availableSearchModules ?? []) as $module): ?>
+                    <?php
+                        $moduleKey = (string) ($module['key'] ?? '');
+                        $isSelected = $selectedModules === [] || in_array($moduleKey, $selectedModules, true);
+                    ?>
+                    <label class="search-module-chip">
+                        <input type="checkbox" name="modules[]" value="<?= htmlspecialchars($moduleKey, ENT_QUOTES, 'UTF-8') ?>" <?= $isSelected ? 'checked' : '' ?>>
+                        <span><?= htmlspecialchars((string) ($module['label'] ?? $moduleKey), ENT_QUOTES, 'UTF-8') ?></span>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+        </fieldset>
+
+        <section class="search-secondary-shell search-filter-dock-panel">
+            <div class="search-secondary-header">
+                <div>
+                    <span class="field-label">Module-specific filters</span>
+                    <h4>Precision Controls</h4>
+                </div>
+                <p class="text-muted">Only filters for selected modules are applied.</p>
+            </div>
+            <div class="search-secondary-grid">
+                <?php foreach (($availableSearchSecondaryFilters ?? []) as $filter): ?>
+                    <?php
+                        $filterKey = (string) ($filter['key'] ?? '');
+                        $filterModule = (string) ($filter['module'] ?? '');
+                        $selectedValue = (string) ($searchFilters[$filterKey] ?? '');
+                    ?>
+                    <label class="field search-secondary-field" data-module-filter="<?= htmlspecialchars($filterModule, ENT_QUOTES, 'UTF-8') ?>">
+                        <span class="field-label"><?= htmlspecialchars((string) ($filter['label'] ?? $filterKey), ENT_QUOTES, 'UTF-8') ?></span>
+                        <select class="input" name="<?= htmlspecialchars($filterKey, ENT_QUOTES, 'UTF-8') ?>">
+                            <option value="">All</option>
+                            <?php foreach (($filter['options'] ?? []) as $option): ?>
+                                <option value="<?= htmlspecialchars((string) ($option['value'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" <?= $selectedValue === (string) ($option['value'] ?? '') ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars((string) ($option['label'] ?? $option['value'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+        </section>
+
+        <div class="cluster search-form-actions">
+            <p class="text-muted">Tip: broader phrases work better than exact punctuation.</p>
+            <button class="btn-secondary" type="reset">Clear Filters</button>
+        </div>
+    </form>
+</section>
+
+<section class="search-empty card stack" id="search-empty-state"<?= ($searchQuery ?? '') !== '' ? ' hidden' : '' ?>>
+    <span class="field-label">Ready</span>
+    <h3>Start with a keyword</h3>
+    <p class="text-muted">Use at least 2 characters. Try an animal ID, adopter surname, invoice number, or SKU.</p>
+</section>
+
+<section class="search-empty card stack" id="search-loading-state" hidden>
+    <span class="field-label">In progress</span>
+    <h3>Searching</h3>
+    <p class="text-muted">Scanning the accessible modules and assembling the result ledger now.</p>
+</section>
+
+<section class="search-empty card stack" id="search-no-results" hidden>
+    <span class="field-label">No match</span>
+    <h3>No results found</h3>
+    <p class="text-muted">Try a broader keyword, remove a module filter, or search by a known identifier.</p>
+</section>
+
+<section class="search-results-ledger" id="search-results"></section>
+
+<script id="search-page-data" type="application/json"><?= json_encode([
+    'csrfToken' => $csrfToken,
+    'initialQuery' => $searchQuery ?? '',
+    'initialFilters' => $searchFilters ?? ['modules' => [], 'per_section' => 5],
+    'defaultPresets' => $defaultSearchPresets,
+], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES) ?></script>

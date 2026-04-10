@@ -1,0 +1,40 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Models;
+
+class SurgeryRecord extends BaseModel
+{
+    protected static string $table = 'surgery_records';
+    protected static bool $useSoftDeletes = false; // Linked to medical_records soft delete
+
+    public function findByMedicalRecord(int $medicalRecordId): array|false
+    {
+        return $this->db->fetch(
+            'SELECT * FROM surgery_records WHERE medical_record_id = :medical_record_id LIMIT 1',
+            ['medical_record_id' => $medicalRecordId]
+        );
+    }
+
+    public function updateByMedicalRecord(int $medicalRecordId, array $data): void
+    {
+        $data['medical_record_id'] = $medicalRecordId;
+
+        $this->db->execute(
+            'UPDATE surgery_records
+             SET surgery_type = :surgery_type,
+                 pre_op_weight_kg = :pre_op_weight_kg,
+                 anesthesia_type = :anesthesia_type,
+                 anesthesia_drug = :anesthesia_drug,
+                 anesthesia_dosage = :anesthesia_dosage,
+                 duration_minutes = :duration_minutes,
+                 surgical_notes = :surgical_notes,
+                 complications = :complications,
+                 post_op_instructions = :post_op_instructions,
+                 follow_up_date = :follow_up_date
+             WHERE medical_record_id = :medical_record_id',
+            $data
+        );
+    }
+}
