@@ -65,6 +65,41 @@ abstract class BaseModel
     }
 
     /**
+     * Create multiple records in a single query.
+     *
+     * @param array<int, array<string, mixed>> $data
+     * @return int Number of affected rows.
+     */
+    public function createMany(array $data): int
+    {
+        if (empty($data)) {
+            return 0;
+        }
+
+        $columns = array_keys(reset($data));
+        $placeholders = '(' . implode(', ', array_fill(0, count($columns), '?')) . ')';
+        $allPlaceholders = implode(', ', array_fill(0, count($data), $placeholders));
+
+        $sql = sprintf(
+            "INSERT INTO %s (%s) VALUES %s",
+            static::$table,
+            implode(', ', $columns),
+            $allPlaceholders
+        );
+
+        $values = [];
+        foreach ($data as $row) {
+            foreach ($columns as $column) {
+                $values[] = $row[$column];
+            }
+        }
+
+        $this->db->execute($sql, $values);
+
+        return count($data);
+    }
+
+    /**
      * Update an existing record.
      *
      * @param int|string $id
