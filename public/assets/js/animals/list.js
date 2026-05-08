@@ -24,12 +24,79 @@
       const params = new URLSearchParams(new FormData(form));
       params.set('page', String(pageNumber));
       params.set('per_page', '20');
-      const { data: result } = await ns.apiRequest('/api/animals?' + params.toString());
-      const items = Array.isArray(result.data) ? result.data : [];
-      const meta = result.meta || {};
+
+      tableBody.innerHTML = Array(5).fill(`
+        <tr>
+          <td>
+            <div class="animal-cell">
+              <div class="animal-cell-media skeleton skeleton-circle"></div>
+              <div style="flex:1">
+                <div class="skeleton skeleton-text skeleton-lg" style="margin-bottom:4px"></div>
+                <div class="skeleton skeleton-text skeleton-sm"></div>
+              </div>
+            </div>
+          </td>
+          <td><div class="skeleton skeleton-text"></div></td>
+          <td><div class="skeleton skeleton-text skeleton-sm"></div></td>
+          <td><div class="skeleton skeleton-text"></div></td>
+          <td><div class="skeleton skeleton-text skeleton-sm"></div></td>
+          <td><div class="skeleton skeleton-text skeleton-lg"></div></td>
+        </tr>
+      `).join('');
+
+      cardList.innerHTML = Array(3).fill(`
+        <article class="card animal-card">
+          <div class="animal-cell">
+            <div class="animal-cell-media skeleton skeleton-circle"></div>
+            <div style="flex:1">
+              <div class="skeleton skeleton-text skeleton-lg" style="margin-bottom:4px"></div>
+              <div class="skeleton skeleton-text skeleton-sm"></div>
+            </div>
+          </div>
+          <div class="cluster" style="margin-top:16px; margin-bottom:16px;">
+            <div class="skeleton skeleton-text skeleton-sm" style="width:100px;"></div>
+            <div class="skeleton skeleton-text skeleton-sm" style="width:80px;"></div>
+          </div>
+          <div class="animal-actions">
+             <div class="skeleton skeleton-rect" style="height:36px; border-radius:18px;"></div>
+          </div>
+        </article>
+      `).join('');
+
+      let result, items, meta;
+      try {
+        const response = await ns.apiRequest('/api/animals?' + params.toString());
+        result = response.data;
+        items = Array.isArray(result.data) ? result.data : [];
+        meta = result.meta || {};
+      } catch (error) {
+        tableBody.innerHTML = '';
+        cardList.innerHTML = '';
+        throw error;
+      }
 
       tableBody.innerHTML = '';
       cardList.innerHTML = '';
+
+      if (items.length === 0) {
+        const emptyStateHtml = `
+          <div class="empty-state">
+            <div class="empty-state-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+              </svg>
+            </div>
+            <h3 class="empty-state-title">No animals found</h3>
+            <p class="empty-state-description">We couldn't find any animals matching your current filters. Try adjusting your search criteria.</p>
+            <div class="empty-state-action">
+              <button class="btn-secondary" type="button" onclick="document.getElementById('animal-filter-form').reset()">Clear Filters</button>
+            </div>
+          </div>
+        `;
+
+        tableBody.innerHTML = `<tr><td colspan="6">${emptyStateHtml}</td></tr>`;
+        cardList.innerHTML = emptyStateHtml;
+      }
 
       items.forEach((animal) => {
         const statusBadge = ns.badgeForStatus(animal.status);
