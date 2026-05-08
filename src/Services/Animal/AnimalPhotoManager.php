@@ -34,6 +34,7 @@ final class AnimalPhotoManager
 
         $existingCount = $this->photos->countByAnimal($animalId);
         $canOptimize = $this->imageManager !== null;
+        $photosData = [];
 
         foreach ($files as $index => $file) {
             if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
@@ -62,16 +63,20 @@ final class AnimalPhotoManager
                 $mimeType = $this->detectMimeType($absolutePath, $mimeType);
             }
 
-            $this->photos->create([
+            $photosData[] = [
                 'animal_id' => $animalId,
                 'file_path' => $relativePath,
                 'file_name' => $fileName,
                 'file_size_bytes' => filesize($absolutePath) ?: 0,
                 'mime_type' => $mimeType,
-                'is_primary' => $existingCount === 0 && $index === 0 ? 1 : 0,
-                'sort_order' => $existingCount + $index,
+                'is_primary' => $existingCount === 0 && count($photosData) === 0 ? 1 : 0,
+                'sort_order' => $existingCount + count($photosData),
                 'uploaded_by' => $userId,
-            ]);
+            ];
+        }
+
+        if ($photosData !== []) {
+            $this->photos->createMany($photosData);
         }
     }
 
