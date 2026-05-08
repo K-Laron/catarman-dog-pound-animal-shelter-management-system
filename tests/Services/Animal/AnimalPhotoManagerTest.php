@@ -32,6 +32,10 @@ final class AnimalPhotoManagerTest extends TestCase
         $repository = new class extends AnimalPhoto {
             public array $records = [];
 
+            public function __construct() {}
+
+            public function countByAnimal(int $animalId): int { return count($this->listByAnimal($animalId)); }
+
             public function listByAnimal(int $animalId): array
             {
                 return array_values(array_filter(
@@ -111,6 +115,9 @@ final class AnimalPhotoManagerTest extends TestCase
     {
         $repository = new class extends AnimalPhoto {
             public array $records = [];
+
+            public function __construct() {}
+
 
             public function countByAnimal(int $animalId): int
             {

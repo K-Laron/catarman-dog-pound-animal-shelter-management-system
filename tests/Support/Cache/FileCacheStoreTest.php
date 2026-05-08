@@ -85,17 +85,28 @@ final class FileCacheStoreTest extends TestCase
         $stdoutPath = $this->cacheDirectory . DIRECTORY_SEPARATOR . 'nested-remember.stdout.log';
         $stderrPath = $this->cacheDirectory . DIRECTORY_SEPARATOR . 'nested-remember.stderr.log';
 
-        $command = 'powershell -NoLogo -NoProfile -Command '
-            . escapeshellarg(
-                '$process = Start-Process -FilePath ' . $this->powershellLiteral(PHP_BINARY)
-                . ' -ArgumentList ' . $this->powershellLiteral($scriptPath)
-                . ' -WorkingDirectory ' . $this->powershellLiteral(dirname($scriptPath))
-                . ' -RedirectStandardOutput ' . $this->powershellLiteral($stdoutPath)
-                . ' -RedirectStandardError ' . $this->powershellLiteral($stderrPath)
-                . ' -PassThru; '
-                . 'if ($process.WaitForExit(' . ($timeoutSeconds * 1000) . ')) { exit $process.ExitCode } '
-                . 'else { $process.Kill(); exit 124 }'
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            $command = 'powershell -NoLogo -NoProfile -Command '
+                . escapeshellarg(
+                    '$process = Start-Process -FilePath ' . $this->powershellLiteral(PHP_BINARY)
+                    . ' -ArgumentList ' . $this->powershellLiteral($scriptPath)
+                    . ' -WorkingDirectory ' . $this->powershellLiteral(dirname($scriptPath))
+                    . ' -RedirectStandardOutput ' . $this->powershellLiteral($stdoutPath)
+                    . ' -RedirectStandardError ' . $this->powershellLiteral($stderrPath)
+                    . ' -PassThru; '
+                    . 'if ($process.WaitForExit(' . ($timeoutSeconds * 1000) . ')) { exit $process.ExitCode } '
+                    . 'else { $process.Kill(); exit 124 }'
+                );
+        } else {
+            $command = sprintf(
+                'timeout %d %s %s > %s 2> %s',
+                $timeoutSeconds,
+                escapeshellarg(PHP_BINARY),
+                escapeshellarg($scriptPath),
+                escapeshellarg($stdoutPath),
+                escapeshellarg($stderrPath)
             );
+        }
 
         $output = [];
         exec($command, $output, $exitCode);
