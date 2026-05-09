@@ -87,6 +87,11 @@ class InventoryService
         return $this->categories->list();
     }
 
+    public function isSkuAvailable(string $sku, ?int $ignoreId = null): bool
+    {
+        return !$this->items->skuExists($sku, $ignoreId);
+    }
+
     public function storeCategory(string $name, ?string $description, int $userId, Request $request): array
     {
         if ($this->categories->existsByName($name)) {

@@ -59,6 +59,20 @@ class InventoryController
         ]);
     }
 
+    public function validateSku(Request $request): Response
+    {
+        $sku = (string) $request->query('sku');
+        $ignoreId = $request->query('ignore_id') ? (int) $request->query('ignore_id') : null;
+
+        if ($sku === '') {
+            return ApiResponse::success(['available' => true]);
+        }
+
+        $available = $this->inventory->isSkuAvailable($sku, $ignoreId);
+
+        return ApiResponse::success(['available' => $available]);
+    }
+
     public function list(Request $request): Response
     {
         $page = Pagination::page($request->query('page'));

@@ -6,13 +6,14 @@ namespace App\Controllers\Concerns;
 
 use App\Core\Request;
 use App\Core\Response;
+use App\Support\Http\ApiResponse;
 use App\Support\Pagination;
 
 trait InteractsWithApi
 {
     protected function validationError(array $errors, string $message = 'The given data was invalid.'): Response
     {
-        return Response::error(422, 'VALIDATION_ERROR', $message, $errors);
+        return ApiResponse::validationError($errors, $message);
     }
 
     protected function currentUser(Request $request): array
@@ -29,11 +30,7 @@ trait InteractsWithApi
 
     protected function paginatedSuccess(array $result, int $page, int $perPage, string $message): Response
     {
-        return Response::success(
-            $result['items'] ?? [],
-            $message,
-            Pagination::meta($page, $perPage, (int) ($result['total'] ?? 0))
-        );
+        return ApiResponse::paginated($result, $page, $perPage, $message);
     }
 
     protected function fileDownloadResponse(

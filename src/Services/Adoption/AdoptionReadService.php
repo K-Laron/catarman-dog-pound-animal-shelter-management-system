@@ -30,7 +30,17 @@ class AdoptionReadService
         $result = $this->applications->paginate($filters, $page, $perPage);
 
         foreach ($result['items'] as &$item) {
-            $item['billing_summary'] = $this->billingSummary->summarizeForApplication((int) $item['id']);
+            if (isset($item['invoice_count'])) {
+                $item['billing_summary'] = [
+                    'invoice_count' => (int) $item['invoice_count'],
+                    'total_amount' => (float) $item['total_amount'],
+                    'amount_paid' => (float) $item['amount_paid'],
+                    'balance_due' => (float) $item['balance_due'],
+                    'payment_state' => ((int) $item['all_paid'] === 1) ? 'paid' : (((int) $item['has_pending'] === 1) ? 'pending' : 'mixed'),
+                ];
+            } else {
+                $item['billing_summary'] = $this->billingSummary->summarize([]);
+            }
             $item['days_in_stage'] = InputNormalizer::daysSince($item['updated_at']);
         }
         unset($item);
