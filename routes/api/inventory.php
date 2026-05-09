@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 $router->get('/api/inventory', \App\Controllers\InventoryController::class . '@list', ['cors', 'auth', 'perm:inventory.read']);
+$router->get('/api/inventory/validate-sku', \App\Controllers\InventoryController::class . '@validateSku', ['cors', 'auth', 'perm:inventory.read']);
 $router->post('/api/inventory', \App\Controllers\InventoryController::class . '@store', ['cors', 'csrf', 'auth', 'perm:inventory.create']);
 $router->get('/api/inventory/categories', \App\Controllers\InventoryController::class . '@categories', ['cors', 'auth', 'perm:inventory.read']);
 $router->get('/api/inventory/alerts', \App\Controllers\InventoryController::class . '@alerts', ['cors', 'auth', 'perm:inventory.read']);

@@ -1,18 +1,33 @@
 (function (ns) {
-  function renderPhotoPreview(preview, files) {
+  function renderPhotoPreview(preview, files, onRemove) {
     if (!preview) {
       return;
     }
 
     preview.replaceChildren();
-    Array.from(files || []).forEach((file) => {
+    Array.from(files || []).forEach((file, index) => {
+      const container = document.createElement('div');
+      container.className = 'photo-preview-item';
+
       const reader = new FileReader();
       reader.onload = () => {
         const image = document.createElement('img');
         image.src = reader.result;
-        preview.appendChild(image);
+        container.appendChild(image);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'photo-preview-remove';
+        removeBtn.innerHTML = '&times;';
+        removeBtn.title = 'Remove this photo';
+        removeBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          onRemove?.(index);
+        });
+        container.appendChild(removeBtn);
       };
       reader.readAsDataURL(file);
+      preview.appendChild(container);
     });
   }
 
@@ -171,6 +186,11 @@
     collection.querySelectorAll('[data-animal-photo-item]').forEach((card) => {
       card.draggable = !isBusy;
     });
+
+    const library = collection.querySelector('.animal-photo-library');
+    if (library) {
+      library.classList.toggle('is-loading', isBusy);
+    }
   }
 
   function syncAnimalPhotoCollection(collection, photos) {
@@ -393,21 +413,34 @@
   function createPhotoUploadSubmitHandler(options) {
     return async function handlePhotoUploadSubmit(event) {
       event?.preventDefault?.();
+      const form = event?.target;
 
-      const { animalId, csrfToken, formFactory, onSuccess } = options;
-      const { data: result } = await ns.apiRequest('/api/animals/' + animalId + '/photos', {
-        method: 'POST',
-        csrfToken,
-        body: formFactory()
-      });
-
-      if (result.error) {
-        window.toast?.error('Photo upload failed', ns.extractError(result));
-        return;
+      if (form) {
+        form.classList.add('is-loading');
+        form.querySelectorAll('button').forEach(btn => btn.disabled = true);
       }
 
-      await onSuccess?.(result);
-      window.toast?.success('Photos uploaded', result.message);
+      const { animalId, csrfToken, formFactory, onSuccess } = options;
+      try {
+        const { data: result } = await ns.apiRequest('/api/animals/' + animalId + '/photos', {
+          method: 'POST',
+          csrfToken,
+          body: formFactory()
+        });
+
+        if (result.error) {
+          window.toast?.error('Photo upload failed', ns.extractError(result));
+          return;
+        }
+
+        await onSuccess?.(result);
+        window.toast?.success('Photos uploaded', result.message);
+      } finally {
+        if (form) {
+          form.classList.remove('is-loading');
+          form.querySelectorAll('button').forEach(btn => btn.disabled = false);
+        }
+      }
     };
   }
 
@@ -418,8 +451,50 @@
       }
 
       form.dataset.photoUploadBound = 'true';
+      const dropzone = form.querySelector('.animal-dropzone');
       const photoInput = form.querySelector('[data-photo-upload-input]');
       const preview = form.querySelector('[data-photo-upload-preview]');
+      let pendingFiles = [];
+
+      const updateInputFiles = () => {
+        if (!photoInput) return;
+        const dataTransfer = new DataTransfer();
+        pendingFiles.forEach(file => dataTransfer.items.add(file));
+        photoInput.files = dataTransfer.files;
+      };
+
+      const handleFiles = (files) => {
+        pendingFiles = Array.from(files);
+        updateInputFiles();
+        renderPhotoPreview(preview, pendingFiles, (indexToRemove) => {
+          pendingFiles.splice(indexToRemove, 1);
+          updateInputFiles();
+          handleFiles(pendingFiles);
+        });
+      };
+
+      if (dropzone) {
+        ['dragenter', 'dragover'].forEach(eventName => {
+          dropzone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.add('is-drag-over');
+          }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+          dropzone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.remove('is-drag-over');
+          }, false);
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+          const dt = e.dataTransfer;
+          handleFiles(dt.files);
+        }, false);
+      }
       const collection = findAnimalPhotoCollection(form.dataset.animalId);
       const handler = createPhotoUploadSubmitHandler({
         animalId: form.dataset.animalId,
@@ -435,12 +510,13 @@
           if (photoInput) {
             photoInput.value = '';
           }
+          pendingFiles = [];
           preview?.replaceChildren();
         },
       });
 
       photoInput?.addEventListener('change', () => {
-        renderPhotoPreview(preview, photoInput.files);
+        handleFiles(photoInput.files);
       });
 
       form.addEventListener('submit', (event) => {

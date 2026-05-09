@@ -434,6 +434,43 @@ function bindInventoryPage() {
       : 'Used only when creating a new item.';
     itemModal.hidden = false;
     itemModal.setAttribute('aria-hidden', 'false');
+    setupSkuValidation(item?.id);
+  }
+
+  function setupSkuValidation(itemId = null) {
+    const skuInput = itemForm.elements.sku;
+    let timeout = null;
+
+    const validate = async () => {
+      const sku = skuInput.value.trim();
+      if (!sku) {
+        skuInput.classList.remove('is-invalid', 'is-valid');
+        return;
+      }
+
+      const params = new URLSearchParams({ sku });
+      if (itemId) params.set('ignore_id', itemId);
+
+      try {
+        const response = await fetch(`/api/inventory/validate-sku?${params.toString()}`);
+        const result = await response.json();
+
+        if (result.success && result.data.available) {
+          skuInput.classList.remove('is-invalid');
+          skuInput.classList.add('is-valid');
+        } else {
+          skuInput.classList.remove('is-valid');
+          skuInput.classList.add('is-invalid');
+        }
+      } catch (e) {
+        console.error('SKU validation failed', e);
+      }
+    };
+
+    skuInput.addEventListener('input', () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(validate, 500);
+    });
   }
 
   function openStockModal(item, action) {

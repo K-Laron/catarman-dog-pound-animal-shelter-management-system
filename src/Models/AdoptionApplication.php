@@ -20,10 +20,28 @@ class AdoptionApplication extends BaseModel
                     u.phone AS adopter_phone,
                     a.animal_id AS animal_code,
                     a.name AS animal_name,
-                    a.species AS animal_species
+                    a.species AS animal_species,
+                    i_stats.invoice_count,
+                    i_stats.total_amount,
+                    i_stats.amount_paid,
+                    i_stats.balance_due,
+                    i_stats.has_pending,
+                    i_stats.all_paid
              FROM adoption_applications aa
              INNER JOIN users u ON u.id = aa.adopter_id
              LEFT JOIN animals a ON a.id = aa.animal_id
+             LEFT JOIN (
+                 SELECT application_id,
+                        COUNT(*) AS invoice_count,
+                        SUM(total_amount) AS total_amount,
+                        SUM(amount_paid) AS amount_paid,
+                        SUM(balance_due) AS balance_due,
+                        MAX(CASE WHEN payment_status IN ('unpaid', 'partial') THEN 1 ELSE 0 END) AS has_pending,
+                        MIN(CASE WHEN payment_status = 'paid' THEN 1 ELSE 0 END) AS all_paid
+                 FROM invoices
+                 WHERE is_deleted = 0 AND application_id IS NOT NULL
+                 GROUP BY application_id
+             ) i_stats ON i_stats.application_id = aa.id
              {$whereSql}
              ORDER BY aa.created_at DESC
              LIMIT {$perPage} OFFSET {$offset}",
